@@ -3,169 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rocket Bot Royale: Owner Edition</title>
+    <title>Rocket Bot Royale</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #070913; font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; user-select: none; }
-        #gameCanvas { display: block; width: 100vw; height: 100vh; background: radial-gradient(circle at 50% 30%, #1a233a 0%, #0b0f1a 70%, #04060b 100%); cursor: crosshair; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #0c101d; font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; user-select: none; }
+        #gameCanvas { display: block; width: 100vw; height: 100vh; background: radial-gradient(circle at 50% 20%, #1c263f 0%, #0d1221 65%, #05070d 100%); cursor: crosshair; }
         
-        /* UI HUD Overlay */
+        /* Original Clean Arcade UI Overlay */
         .hud-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; z-index: 10; }
-        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; width: 100%; pointer-events: auto; }
-        .stats-panel { background: rgba(13, 17, 28, 0.9); border: 2px solid #2563eb; border-radius: 14px; padding: 12px 22px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.6); display: flex; gap: 24px; align-items: center; }
-        .stat-item { display: flex; flex-direction: column; }
-        .stat-label { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 800; letter-spacing: 0.8px; }
-        .stat-value { font-size: 20px; font-weight: 900; color: #f1f5f9; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .stat-value.gold { color: #fbbf24; }
-        .stat-value.health { color: #22c55e; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; pointer-events: auto; }
         
-        .owner-btn { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; border: none; padding: 14px 28px; font-weight: 900; font-size: 16px; border-radius: 14px; cursor: pointer; box-shadow: 0 4px 25px rgba(245, 158, 11, 0.5); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .owner-btn:hover { transform: scale(1.06); box-shadow: 0 6px 30px rgba(245, 158, 11, 0.8); }
-
-        /* Owner Command Modal */
-        #ownerModal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); width: 720px; max-height: 88vh; background: rgba(9, 12, 20, 0.96); border: 3px solid #f59e0b; border-radius: 24px; padding: 25px; z-index: 100; backdrop-filter: blur(20px); box-shadow: 0 25px 70px rgba(0,0,0,0.9); display: flex; flex-direction: column; gap: 20px; opacity: 0; pointer-events: none; transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #ownerModal.open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(245, 158, 11, 0.3); padding-bottom: 14px; }
-        .modal-title { font-size: 22px; font-weight: 900; color: #f59e0b; display: flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .close-btn { background: none; border: none; color: #94a3b8; font-size: 26px; cursor: pointer; font-weight: bold; transition: color 0.2s; }
-        .close-btn:hover { color: #fff; }
+        .match-info { background: rgba(13, 18, 33, 0.85); border: 2px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 20px; backdrop-filter: blur(8px); display: flex; gap: 24px; align-items: center; box-shadow: 0 8px 25px rgba(0,0,0,0.5); }
+        .match-stat { display: flex; flex-direction: column; align-items: center; }
+        .stat-label { font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 0.5px; }
+        .stat-val { font-size: 18px; font-weight: 800; color: #f8fafc; }
+        .stat-val.gold { color: #fbbf24; }
         
-        .modal-body { overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-right: 6px; max-height: 65vh; }
-        .control-group { background: rgba(20, 27, 45, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-        .group-title { font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1px; }
-        .toggles-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .toggle-item { display: flex; align-items: center; justify-content: space-between; background: rgba(10, 14, 23, 0.7); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
-        .toggle-item span { font-size: 13px; font-weight: 700; color: #e2e8f0; }
-        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .3s; border-radius: 22px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background-color: #f59e0b; }
-        input:checked + .slider:before { transform: translateX(22px); }
-
-        .btn-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .action-btn { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); color: #f8fafc; padding: 10px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
-        .action-btn:hover { background: #334155; border-color: #f59e0b; transform: translateY(-1px); }
-        .action-btn.danger { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
-        .action-btn.danger:hover { background: rgba(239, 68, 68, 0.4); }
-
-        /* Controls Help Box */
-        .controls-help { position: absolute; bottom: 20px; left: 20px; background: rgba(13, 17, 28, 0.9); border: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; border-radius: 12px; pointer-events: auto; backdrop-filter: blur(8px); font-size: 13px; color: #94a3b8; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .controls-help b { color: #f8fafc; }
+        .player-hud { background: rgba(13, 18, 33, 0.85); border: 2px solid #3b82f6; border-radius: 10px; padding: 10px 20px; backdrop-filter: blur(8px); display: flex; gap: 20px; align-items: center; box-shadow: 0 8px 25px rgba(0,0,0,0.5); }
         
-        /* Game Over / Victory Modal */
-        #gameOverScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 18, 0.92); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .controls-hint { background: rgba(13, 18, 33, 0.8); border: 1px solid rgba(255,255,255,0.1); padding: 10px 16px; border-radius: 8px; font-size: 12px; color: #94a3b8; pointer-events: auto; backdrop-filter: blur(6px); }
+        .controls-hint b { color: #f8fafc; }
+
+        /* Game Over Modal */
+        #gameOverScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 7, 15, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         #gameOverScreen.active { opacity: 1; pointer-events: auto; }
-        #gameOverTitle { font-size: 52px; font-weight: 900; text-transform: uppercase; text-shadow: 0 6px 25px rgba(0,0,0,0.9); letter-spacing: 2px; }
-        .restart-btn { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; border: none; padding: 16px 36px; font-size: 18px; font-weight: 900; border-radius: 14px; cursor: pointer; box-shadow: 0 6px 25px rgba(37, 99, 235, 0.6); transition: transform 0.2s; text-transform: uppercase; letter-spacing: 1px; }
-        .restart-btn:hover { transform: scale(1.05); }
+        .game-over-title { font-size: 48px; font-weight: 900; text-transform: uppercase; color: #ef4444; text-shadow: 0 4px 20px rgba(239, 68, 68, 0.4); letter-spacing: 2px; }
+        .play-again-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; border: none; padding: 14px 32px; font-size: 16px; font-weight: 900; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.5); transition: transform 0.2s; text-transform: uppercase; letter-spacing: 1px; }
+        .play-again-btn:hover { transform: scale(1.05); }
     </style>
 </head>
 <body>
 
     <div class="hud-overlay">
         <div class="top-bar">
-            <div class="stats-panel">
-                <div class="stat-item">
-                    <span class="stat-label">Alive Tanks</span>
-                    <span class="stat-value" id="aliveCount">25</span>
+            <div class="match-info">
+                <div class="match-stat">
+                    <span class="stat-label">Alive</span>
+                    <span class="stat-val" id="aliveCount">25</span>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">Your Health</span>
-                    <span class="stat-value health" id="playerHp">100%</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Coins</span>
-                    <span class="stat-value gold" id="playerCoins">10,000</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Active Weapon</span>
-                    <span class="stat-value" id="activeWeapon" style="color:#38bdf8;">Standard Rocket</span>
+                <div class="match-stat">
+                    <span class="stat-label">Placement</span>
+                    <span class="stat-val" id="placeVal">#1</span>
                 </div>
             </div>
-            <button class="owner-btn" id="openOwnerModal">👑 Owner Panel <span style="font-size:11px; background:rgba(0,0,0,0.3); padding:3px 8px; border-radius:6px;">[O]</span></button>
+            
+            <div class="player-hud">
+                <div class="match-stat">
+                    <span class="stat-label">Health</span>
+                    <span class="stat-val" id="playerHp" style="color:#22c55e;">100</span>
+                </div>
+                <div class="match-stat">
+                    <span class="stat-label">Coins</span>
+                    <span class="stat-val gold" id="playerCoins">0</span>
+                </div>
+            </div>
         </div>
         
-        <div class="controls-help">
-            <b>A / D</b> or <b>← / →</b>: Drive Tank &nbsp;|&nbsp; <b>Mouse</b>: Aim Turret &nbsp;|&nbsp; <b>Left Click / Space</b>: Fire Rocket (Recoil Jump) &nbsp;|&nbsp; <b>Right Click</b>: Teleport &nbsp;|&nbsp; <b>O</b>: Owner Panel
+        <div class="controls-hint">
+            <b>A / D</b>: Drive &nbsp;|&nbsp; <b>Mouse</b>: Aim Turret &nbsp;|&nbsp; <b>Left Click / Space</b>: Fire Rocket (Recoil Jump)
         </div>
     </div>
 
-    <!-- Owner / Admin God-Mode Panel -->
-    <div id="ownerModal">
-        <div class="modal-header">
-            <div class="modal-title">👑 Rocket Bot Royale: Owner Command Center</div>
-            <button class="close-btn" id="closeOwnerModal">&times;</button>
-        </div>
-        <div class="modal-body">
-            <!-- God Mode & Toggles -->
-            <div class="control-group">
-                <div class="group-title">God Mode & Physics Toggles</div>
-                <div class="toggles-grid">
-                    <label class="toggle-item">
-                        <span>Invincibility (God Mode)</span>
-                        <div class="switch"><input type="checkbox" id="toggleGodMode"><span class="slider"></span></div>
-                    </label>
-                    <label class="toggle-item">
-                        <span>Infinite Ammo & No CD</span>
-                        <div class="switch"><input type="checkbox" id="toggleInfiniteAmmo" checked><span class="slider"></span></div>
-                    </label>
-                    <label class="toggle-item">
-                        <span>Moon Gravity (Floaty)</span>
-                        <div class="switch"><input type="checkbox" id="toggleMoonGravity"><span class="slider"></span></div>
-                    </label>
-                    <label class="toggle-item">
-                        <span>Right-Click Teleport</span>
-                        <div class="switch"><input type="checkbox" id="toggleTeleport" checked><span class="slider"></span></div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Recoil Multiplier -->
-            <div class="control-group">
-                <div class="group-title">Rocket Recoil / Launch Power</div>
-                <div class="btn-row">
-                    <button class="action-btn recoil-btn" data-recoil="0">0x (No Recoil)</button>
-                    <button class="action-btn recoil-btn" data-recoil="1" style="border-color:#f59e0b;">1x (Normal)</button>
-                    <button class="action-btn recoil-btn" data-recoil="2.5">2.5x High Jump</button>
-                    <button class="action-btn recoil-btn" data-recoil="5">5x MEGA LAUNCH</button>
-                </div>
-            </div>
-
-            <!-- Arsenal Override -->
-            <div class="control-group">
-                <div class="group-title">Weapon Arsenal Override</div>
-                <div class="btn-row">
-                    <button class="action-btn weapon-btn" data-weapon="standard" style="border-color:#38bdf8;">Standard Rocket</button>
-                    <button class="action-btn weapon-btn" data-weapon="triple">Triple Spread</button>
-                    <button class="action-btn weapon-btn" data-weapon="nuke" style="color:#fca5a5;">Mega Nuke</button>
-                    <button class="action-btn weapon-btn" data-weapon="laser" style="color:#38bdf8;">Orbital Laser</button>
-                    <button class="action-btn weapon-btn" data-weapon="homing" style="color:#4ade80;">Homing Swarm</button>
-                    <button class="action-btn weapon-btn" data-weapon="blackhole" style="color:#c084fc;">Black Hole Bomb</button>
-                </div>
-            </div>
-
-            <!-- World & Instant Commands -->
-            <div class="control-group">
-                <div class="group-title">World & Instant Commands</div>
-                <div class="btn-row">
-                    <button class="action-btn" id="btnSpawnBot">Spawn Enemy Bot</button>
-                    <button class="action-btn" id="btnSpawnCrate">Spawn Supply Crate</button>
-                    <button class="action-btn" id="btnMeteor">Call Meteor Shower</button>
-                    <button class="action-btn" id="btnRestoreTerrain">Restore Island Terrain</button>
-                    <button class="action-btn" id="btnLowerLava">Lower Lava Level</button>
-                    <button class="action-btn" id="btnAddCoins">+10,000 Coins</button>
-                    <button class="action-btn danger" id="btnSmiteBots">Smite All Enemy Bots</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Game Over Screen -->
     <div id="gameOverScreen">
-        <div id="gameOverTitle" style="color:#ef4444;">You Were Destroyed!</div>
-        <div style="font-size:16px; color:#94a3b8;">As Owner, death is merely a suggestion.</div>
-        <button class="restart-btn" id="btnRespawnOwner">Respawn Instantly (Owner Power)</button>
+        <div class="game-over-title">Eliminated</div>
+        <div style="font-size: 14px; color: #94a3b8;" id="placementResult">You finished in #12 place</div>
+        <button class="play-again-btn" id="restartBtn">Play Again</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -174,65 +76,53 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        function resizeCanvas() {
+        function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        window.addEventListener('resize', resize);
+        resize();
 
         const CONFIG = {
-            gravity: 0.38,
-            moonGravity: 0.12,
-            seaRiseSpeed: 0.08
+            gravity: 0.35,
+            seaRiseSpeed: 0.05
         };
 
-        let currentSeaLevel = canvas.height - 70;
-        let ownerState = {
-            godMode: false,
-            infiniteAmmo: true,
-            moonGravity: false,
-            teleport: true,
-            recoilMultiplier: 1.0,
-            weapon: 'standard'
-        };
-
+        let currentSeaLevel = canvas.height - 60;
         let keys = { left: false, right: false };
         let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
-        let camera = { x: 0, y: 0, shake: 0 };
+        let camera = { shake: 0 };
 
-        // Destructible Islands (Poly/Box chunks with dirt & grass layers)
+        // Destructible Islands (Classic green grass top + brown dirt body)
         let islands = [];
 
         function initIslands() {
-            let cx = canvas.width;
-            let cy = canvas.height;
+            let w = canvas.width;
+            let h = canvas.height;
             islands = [
-                { x: cx * 0.15, y: cy * 0.45, w: cx * 0.30, h: 180 },
-                { x: cx * 0.55, y: cy * 0.45, w: cx * 0.30, h: 180 },
-                { x: cx * 0.35, y: cy * 0.25, w: cx * 0.30, h: 150 },
-                { x: cx * 0.05, y: cy * 0.65, w: cx * 0.25, h: 160 },
-                { x: cx * 0.70, y: cy * 0.65, w: cx * 0.25, h: 160 },
-                { x: cx * 0.38, y: cy * 0.80, w: cx * 0.24, h: 120 }
+                { x: w * 0.12, y: h * 0.42, width: w * 0.28, height: 160 },
+                { x: w * 0.60, y: h * 0.42, width: w * 0.28, height: 160 },
+                { x: w * 0.35, y: h * 0.22, width: w * 0.30, height: 140 },
+                { x: w * 0.05, y: h * 0.64, width: w * 0.24, height: 140 },
+                { x: w * 0.71, y: h * 0.64, width: w * 0.24, height: 140 },
+                { x: w * 0.38, y: h * 0.78, width: w * 0.24, height: 110 }
             ];
         }
         initIslands();
 
         let player = {
             x: canvas.width * 0.5,
-            y: canvas.height * 0.15,
+            y: canvas.height * 0.12,
             vx: 0,
             vy: 0,
-            radius: 16,
+            radius: 15,
             turretAngle: 0,
             hp: 100,
             maxHp: 100,
-            coins: 10000,
+            coins: 0,
             alive: true,
-            color: '#2563eb',
-            trackColor: '#1d4ed8',
-            isPlayer: true,
-            name: '👑 YOU (Owner)'
+            color: '#3b82f6',
+            isPlayer: true
         };
 
         let bots = [];
@@ -242,360 +132,265 @@
 
         function spawnBots(count) {
             for (let i = 0; i < count; i++) {
-                let island = islands[Math.floor(Math.random() * islands.length)];
+                let isl = islands[Math.floor(Math.random() * islands.length)];
                 bots.push({
-                    x: island.x + 40 + Math.random() * (island.w - 80),
-                    y: island.y - 30,
+                    x: isl.x + 30 + Math.random() * (isl.width - 60),
+                    y: isl.y - 30,
                     vx: (Math.random() - 0.5) * 2,
                     vy: 0,
-                    radius: 16,
+                    radius: 15,
                     turretAngle: 0,
                     hp: 100,
                     maxHp: 100,
-                    color: '#dc2626',
-                    trackColor: '#991b1b',
+                    color: '#ef4444',
                     aiTimer: 0,
-                    shootTimer: 70 + Math.random() * 60,
-                    name: 'Bot #' + Math.floor(100 + Math.random() * 900),
+                    shootTimer: 60 + Math.random() * 60,
                     isPlayer: false
                 });
             }
         }
         spawnBots(24);
 
-        // Input Handlers
-        window.addEventListener('keydown', (e) => {
+        window.addEventListener('keydown', e => {
             if (e.key === 'a' || e.key === 'ArrowLeft') keys.left = true;
             if (e.key === 'd' || e.key === 'ArrowRight') keys.right = true;
-            if (e.key === ' ' || e.key === 'ArrowUp') { fireWeapon(player); e.preventDefault(); }
-            if (e.key === 'o' || e.key === 'O') toggleOwnerModal();
+            if (e.key === ' ' || e.key === 'ArrowUp') { fireRocket(player); e.preventDefault(); }
         });
 
-        window.addEventListener('keyup', (e) => {
+        window.addEventListener('keyup', e => {
             if (e.key === 'a' || e.key === 'ArrowLeft') keys.left = false;
             if (e.key === 'd' || e.key === 'ArrowRight') keys.right = false;
         });
 
-        window.addEventListener('mousemove', (e) => {
+        window.addEventListener('mousemove', e => {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
         });
 
-        window.addEventListener('mousedown', (e) => {
-            if (e.target.tagName === 'CANVAS') {
-                if (e.button === 0) {
-                    fireWeapon(player);
-                } else if (e.button === 2 && ownerState.teleport) {
-                    player.x = mouse.x;
-                    player.y = mouse.y;
-                    player.vx = 0;
-                    player.vy = 0;
-                    addFloatingText(player.x, player.y, "⚡ TELEPORTED", "#38bdf8");
-                }
-            }
+        window.addEventListener('mousedown', () => {
+            fireRocket(player);
         });
 
-        window.addEventListener('contextmenu', (e) => {
-            if (ownerState.teleport && e.target.tagName === 'CANVAS') {
-                e.preventDefault();
-                player.x = mouse.x;
-                player.y = mouse.y;
-                player.vx = 0;
-                player.vy = 0;
-                addFloatingText(player.x, player.y, "⚡ TELEPORTED", "#38bdf8");
-            }
-        });
-
-        function fireWeapon(tank) {
+        function fireRocket(tank) {
             if (!tank.alive) return;
             let angle = tank.turretAngle;
-            let speed = 13;
+            let speed = 12;
 
-            if (ownerState.weapon === 'standard') {
-                projectiles.push({ x: tank.x + Math.cos(angle)*26, y: tank.y + Math.sin(angle)*26, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, radius: 5, type: 'standard', isPlayer: tank.isPlayer });
-            } else if (ownerState.weapon === 'triple') {
-                [-0.22, 0, 0.22].forEach(offset => {
-                    projectiles.push({ x: tank.x + Math.cos(angle+offset)*26, y: tank.y + Math.sin(angle+offset)*26, vx: Math.cos(angle+offset)*speed, vy: Math.sin(angle+offset)*speed, radius: 4, type: 'standard', isPlayer: tank.isPlayer });
-                });
-            } else if (ownerState.weapon === 'nuke') {
-                projectiles.push({ x: tank.x + Math.cos(angle)*26, y: tank.y + Math.sin(angle)*26, vx: Math.cos(angle)*(speed*0.8), vy: Math.sin(angle)*(speed*0.8), radius: 12, type: 'nuke', isPlayer: tank.isPlayer });
-            } else if (ownerState.weapon === 'laser') {
-                createLaserStrike(mouse.x, mouse.y);
-            } else if (ownerState.weapon === 'homing') {
-                projectiles.push({ x: tank.x + Math.cos(angle)*26, y: tank.y + Math.sin(angle)*26, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed, radius: 6, type: 'homing', isPlayer: tank.isPlayer });
-            } else if (ownerState.weapon === 'blackhole') {
-                projectiles.push({ x: tank.x + Math.cos(angle)*26, y: tank.y + Math.sin(angle)*26, vx: Math.cos(angle)*(speed*0.9), vy: Math.sin(angle)*(speed*0.9), radius: 9, type: 'blackhole', isPlayer: tank.isPlayer });
-            }
+            projectiles.push({
+                x: tank.x + Math.cos(angle) * 24,
+                y: tank.y + Math.sin(angle) * 24,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                radius: 4.5,
+                isPlayer: tank.isPlayer
+            });
 
+            // Rocket jump recoil kickback
             if (tank.isPlayer) {
-                let recoilPower = 7 * ownerState.recoilMultiplier;
-                tank.vx -= Math.cos(angle) * recoilPower;
-                tank.vy -= Math.sin(angle) * recoilPower;
-                createMuzzleFlash(tank.x + Math.cos(angle)*26, tank.y + Math.sin(angle)*26, angle);
+                tank.vx -= Math.cos(angle) * 6.5;
+                tank.vy -= Math.sin(angle) * 6.5;
+                createExplosionParticles(tank.x, tank.y, '#f59e0b', 12);
             }
         }
 
-        function createExplosion(x, y, radius, damage, isNuke = false) {
-            camera.shake = isNuke ? 25 : 12;
+        function createExplosion(x, y, radius) {
+            camera.shake = 10;
 
             [player, ...bots].forEach(t => {
                 if (!t.alive) return;
                 let dist = Math.hypot(t.x - x, t.y - y);
                 if (dist < radius + t.radius) {
-                    let dmg = isNuke ? 130 : 50;
-                    if (t.isPlayer && ownerState.godMode) dmg = 0;
-                    t.hp -= dmg;
+                    t.hp -= 40;
                     if (t.hp <= 0) {
                         t.hp = 0;
                         t.alive = false;
                         if (t.isPlayer) {
+                            let aliveCount = 1 + bots.filter(b => b.alive).length;
+                            document.getElementById('placementResult').innerText = `You finished in #${aliveCount} place`;
                             document.getElementById('gameOverScreen').classList.add('active');
                         } else {
-                            player.coins += 500;
-                            addFloatingText(t.x, t.y, "+500 COINS!", "#fbbf24");
+                            player.coins += 250;
+                            addFloatingText(t.x, t.y, "+250", "#fbbf24");
                         }
                     }
                 }
             });
 
-            // Carve destructible islands
+            // Carve terrain craters
             islands.forEach(isl => {
-                let cx = Math.max(isl.x, Math.min(x, isl.x + isl.w));
-                let cy = Math.max(isl.y, Math.min(y, isl.y + isl.h));
+                let cx = Math.max(isl.x, Math.min(x, isl.x + isl.width));
+                let cy = Math.max(isl.y, Math.min(y, isl.y + isl.height));
                 if (Math.hypot(x - cx, y - cy) < radius) {
-                    isl.h = Math.max(30, isl.h - radius * 0.4);
+                    isl.height = Math.max(25, isl.height - radius * 0.35);
                 }
             });
 
-            // Spawn juicy explosion particles & debris
-            for (let i = 0; i < (isNuke ? 70 : 30); i++) {
+            createExplosionParticles(x, y, '#f97316', 25);
+        }
+
+        function createExplosionParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
                 let angle = Math.random() * Math.PI * 2;
-                let speed = 2 + Math.random() * 9;
+                let speed = 1 + Math.random() * 7;
                 particles.push({
                     x, y,
                     vx: Math.cos(angle) * speed,
                     vy: Math.sin(angle) * speed,
-                    color: Math.random() > 0.4 ? (isNuke ? '#ef4444' : '#f97316') : '#facc15',
-                    size: 3 + Math.random() * 6,
-                    life: 25 + Math.random() * 20
+                    color: Math.random() > 0.5 ? color : '#facc15',
+                    size: 2 + Math.random() * 4,
+                    life: 20 + Math.random() * 15
                 });
             }
-        }
-
-        function createMuzzleFlash(x, y, angle) {
-            for(let i=0; i<8; i++) {
-                particles.push({
-                    x, y,
-                    vx: Math.cos(angle)* (3 + Math.random()*5) + (Math.random()-0.5)*2,
-                    vy: Math.sin(angle)* (3 + Math.random()*5) + (Math.random()-0.5)*2,
-                    color: '#facc15',
-                    size: 2 + Math.random()*3,
-                    life: 10
-                });
-            }
-        }
-
-        function createLaserStrike(x, y) {
-            createExplosion(x, y, 80, 100, true);
-            for(let i=0; i<40; i++) {
-                particles.push({
-                    x: x + (Math.random()-0.5)*20, y: y - 400 + i * 10,
-                    vx: 0, vy: 20 + Math.random()*10,
-                    color: '#38bdf8', size: 5, life: 20
-                });
-            }
-            addFloatingText(x, y, "⚡ ORBITAL LASER", "#38bdf8");
         }
 
         function addFloatingText(x, y, text, color) {
-            floatingTexts.push({ x, y, text, color, life: 45, vy: -1.2 });
+            floatingTexts.push({ x, y, text, color, life: 35, vy: -1 });
         }
 
-        function updateTankPhysics(tank) {
+        function updateTank(tank) {
             if (!tank.alive) return;
 
-            let gravity = ownerState.moonGravity && tank.isPlayer ? CONFIG.moonGravity : CONFIG.gravity;
-            tank.vy += gravity;
+            tank.vy += CONFIG.gravity;
             tank.x += tank.vx;
             tank.y += tank.vy;
-            tank.vx *= 0.95;
+            tank.vx *= 0.94;
 
-            // Island collisions
+            // Island Collision
             islands.forEach(isl => {
-                if (tank.x >= isl.x && tank.x <= isl.x + isl.w) {
-                    if (tank.y + tank.radius >= isl.y && tank.y - tank.radius <= isl.y + isl.h) {
-                        if (tank.vy >= 0 && tank.y <= isl.y + 16) {
+                if (tank.x >= isl.x && tank.x <= isl.x + isl.width) {
+                    if (tank.y + tank.radius >= isl.y && tank.y - tank.radius <= isl.y + isl.height) {
+                        if (tank.vy >= 0 && tank.y <= isl.y + 14) {
                             tank.y = isl.y - tank.radius;
                             tank.vy = 0;
-                            tank.vx *= 0.82; // traction
+                            tank.vx *= 0.8;
                         }
                     }
                 }
             });
 
             if (tank.isPlayer) {
-                if (keys.left) tank.vx -= 0.55;
-                if (keys.right) tank.vx += 0.55;
+                if (keys.left) tank.vx -= 0.5;
+                if (keys.right) tank.vx += 0.5;
                 tank.turretAngle = Math.atan2(mouse.y - tank.y, mouse.x - tank.x);
             } else {
                 tank.aiTimer++;
-                if (tank.aiTimer > 70) {
+                if (tank.aiTimer > 75) {
                     tank.aiTimer = 0;
-                    tank.vx = (Math.random() - 0.5) * 4;
+                    tank.vx = (Math.random() - 0.5) * 3.5;
                 }
                 let angleToPlayer = Math.atan2(player.y - tank.y, player.x - tank.x);
                 tank.turretAngle = angleToPlayer;
                 tank.shootTimer--;
                 if (tank.shootTimer <= 0) {
-                    tank.shootTimer = 80 + Math.random() * 60;
+                    tank.shootTimer = 70 + Math.random() * 60;
                     projectiles.push({
-                        x: tank.x + Math.cos(angleToPlayer) * 26,
-                        y: tank.y + Math.sin(angleToPlayer) * 26,
-                        vx: Math.cos(angleToPlayer) * 8,
-                        vy: Math.sin(angleToPlayer) * 8,
-                        radius: 5,
-                        type: 'standard',
+                        x: tank.x + Math.cos(angleToPlayer) * 24,
+                        y: tank.y + Math.sin(angleToPlayer) * 24,
+                        vx: Math.cos(angleToPlayer) * 11,
+                        vy: Math.sin(angleToPlayer) * 11,
+                        radius: 4.5,
                         isPlayer: false
                     });
                 }
             }
 
-            // Lava hazard
+            // Lava Sea hazard
             if (tank.y + tank.radius >= currentSeaLevel) {
-                let lavaDmg = tank.isPlayer && ownerState.godMode ? 0 : 3;
-                tank.hp -= lavaDmg;
+                tank.hp -= 2;
                 if (tank.hp <= 0) {
                     tank.hp = 0;
                     tank.alive = false;
                     if (tank.isPlayer) {
+                        let aliveCount = 1 + bots.filter(b => b.alive).length;
+                        document.getElementById('placementResult').innerText = `You finished in #${aliveCount} place`;
                         document.getElementById('gameOverScreen').classList.add('active');
                     }
                 }
             }
 
-            if (tank.x < 30) { tank.x = 30; tank.vx *= -0.5; }
-            if (tank.x > canvas.width - 30) { tank.x = canvas.width - 30; tank.vx *= -0.5; }
+            if (tank.x < 20) { tank.x = 20; tank.vx *= -0.5; }
+            if (tank.x > canvas.width - 20) { tank.x = canvas.width - 20; tank.vx *= -0.5; }
         }
 
         function update() {
             currentSeaLevel -= CONFIG.seaRiseSpeed * 0.05;
             if (camera.shake > 0) camera.shake *= 0.85;
 
-            updateTankPhysics(player);
-            bots.forEach(b => updateTankPhysics(b));
+            updateTank(player);
+            bots.forEach(b => updateTank(b));
 
-            projectiles.forEach((p, index) => {
+            projectiles.forEach((p, idx) => {
                 p.x += p.vx;
                 p.y += p.vy;
-                p.vy += CONFIG.gravity * 0.3;
-
-                if (p.type === 'homing' && p.isPlayer) {
-                    let nearest = null;
-                    let minDist = 9999;
-                    bots.forEach(b => {
-                        if (b.alive) {
-                            let d = Math.hypot(b.x - p.x, b.y - p.y);
-                            if (d < minDist) { minDist = d; nearest = b; }
-                        }
-                    });
-                    if (nearest) {
-                        let ta = Math.atan2(nearest.y - p.y, nearest.x - p.x);
-                        p.vx += Math.cos(ta) * 0.9;
-                        p.vy += Math.sin(ta) * 0.9;
-                        let spd = Math.hypot(p.vx, p.vy);
-                        if (spd > 13) { p.vx = (p.vx / spd) * 13; p.vy = (p.vy / spd) * 13; }
-                    }
-                }
-
-                if (p.type === 'blackhole') {
-                    [player, ...bots].forEach(t => {
-                        if (t.alive) {
-                            let d = Math.hypot(p.x - t.x, p.y - t.y);
-                            if (d < 200 && d > 10) {
-                                t.vx += (p.x - t.x) * 0.025;
-                                t.vy += (p.y - t.y) * 0.025;
-                            }
-                        }
-                    });
-                }
+                p.vy += CONFIG.gravity * 0.25;
 
                 let hit = false;
                 islands.forEach(isl => {
-                    if (p.x >= isl.x && p.x <= isl.x + isl.w && p.y >= isl.y && p.y <= isl.y + isl.h) {
+                    if (p.x >= isl.x && p.x <= isl.x + isl.width && p.y >= isl.y && p.y <= isl.y + isl.height) {
                         hit = true;
                     }
                 });
 
                 if (hit || p.y >= currentSeaLevel) {
-                    createExplosion(p.x, p.y, p.type === 'nuke' ? 95 : (p.type === 'blackhole' ? 130 : 38), 50, p.type === 'nuke' || p.type === 'blackhole');
-                    projectiles.splice(index, 1);
+                    createExplosion(p.x, p.y, 32);
+                    projectiles.splice(idx, 1);
                 }
             });
 
-            particles.forEach((pt, index) => {
+            particles.forEach((pt, idx) => {
                 pt.x += pt.vx;
                 pt.y += pt.vy;
                 pt.life--;
-                if (pt.life <= 0) particles.splice(index, 1);
+                if (pt.life <= 0) particles.splice(idx, 1);
             });
 
-            floatingTexts.forEach((ft, index) => {
+            floatingTexts.forEach((ft, idx) => {
                 ft.y += ft.vy;
                 ft.life--;
-                if (ft.life <= 0) floatingTexts.splice(index, 1);
+                if (ft.life <= 0) floatingTexts.splice(idx, 1);
             });
 
-            let aliveBotsCount = bots.filter(b => b.alive).length;
-            document.getElementById('aliveCount').innerText = (player.alive ? 1 : 0) + aliveBotsCount;
-            document.getElementById('playerHp').innerText = Math.max(0, player.hp) + '%';
+            let aliveCount = (player.alive ? 1 : 0) + bots.filter(b => b.alive).length;
+            document.getElementById('aliveCount').innerText = aliveCount;
+            document.getElementById('placeVal').innerText = '#' + aliveCount;
+            document.getElementById('playerHp').innerText = Math.max(0, player.hp);
             document.getElementById('playerCoins').innerText = player.coins.toLocaleString();
         }
 
-        // Render Robo-Tank with crisp sprites / shapes
+        // Exact original Rocket Bot Royale tank style (Caterpillar tracks + rounded hull + rotating gun)
         function drawTank(t) {
             if (!t.alive) return;
             ctx.save();
             ctx.translate(t.x, t.y);
 
-            // Tank Tread Tracks Base
-            ctx.fillStyle = t.trackColor;
+            // Caterpillar Tracks
+            ctx.fillStyle = '#1e293b';
             ctx.beginPath();
-            ctx.roundRect(-t.radius - 2, 6, t.radius * 2 + 4, 11, 5);
+            ctx.roundRect(-t.radius - 2, 5, t.radius * 2 + 4, 10, 4);
             ctx.fill();
-            ctx.strokeStyle = '#0f172a';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
 
             // Armored Hull Body
             ctx.fillStyle = t.color;
             ctx.beginPath();
-            ctx.roundRect(-t.radius, -8, t.radius * 2, 16, 7);
+            ctx.roundRect(-t.radius, -7, t.radius * 2, 14, 6);
             ctx.fill();
-            ctx.stroke();
 
-            // Turret & Dual-Segment Barrel
+            // Turret & Cannon Barrel
             ctx.rotate(t.turretAngle);
             ctx.fillStyle = '#334155';
-            ctx.fillRect(0, -5, 30, 10);
-            ctx.strokeStyle = '#0f172a';
-            ctx.strokeRect(0, -5, 30, 10);
-
-            // Turret Dome Center
+            ctx.fillRect(0, -4, 24, 8);
             ctx.beginPath();
-            ctx.arc(0, 0, 9, 0, Math.PI * 2);
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
             ctx.fillStyle = t.color;
             ctx.fill();
-            ctx.stroke();
 
             ctx.restore();
 
-            // Health Bar
-            ctx.fillStyle = 'rgba(0,0,0,0.7)';
-            ctx.fillRect(t.x - 24, t.y - 32, 48, 6);
-            ctx.fillStyle = t.isPlayer ? '#2563eb' : '#dc2626';
-            ctx.fillRect(t.x - 24, t.y - 32, 48 * (t.hp / t.maxHp), 6);
-            ctx.strokeStyle = '#0f172a';
-            ctx.strokeRect(t.x - 24, t.y - 32, 48, 6);
+            // Mini Health bar above tank
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(t.x - 18, t.y - 26, 36, 5);
+            ctx.fillStyle = t.isPlayer ? '#3b82f6' : '#ef4444';
+            ctx.fillRect(t.x - 18, t.y - 26, 36 * (t.hp / t.maxHp), 5);
         }
 
         function render() {
@@ -606,60 +401,40 @@
                 ctx.translate((Math.random() - 0.5) * camera.shake, (Math.random() - 0.5) * camera.shake);
             }
 
-            // Draw Parallax Background Stars
-            ctx.fillStyle = 'rgba(255,255,255,0.08)';
-            for (let i = 0; i < 70; i++) {
-                let sx = (i * 149) % canvas.width;
-                let sy = (i * 97) % (canvas.height * 0.7);
-                ctx.fillRect(sx, sy, 2, 2);
-            }
-
-            // Draw Destructible Islands with Earth Layers & Grass
+            // Islands (Brown earth body + Green grass top)
             islands.forEach(isl => {
-                // Dirt underground body
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(isl.x, isl.y, isl.w, isl.h);
-                ctx.strokeStyle = '#0f172a';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(isl.x, isl.y, isl.w, isl.h);
-
-                // Vibrant grass top layer
-                ctx.fillStyle = '#22c55e';
-                ctx.fillRect(isl.x, isl.y, isl.w, 8);
+                ctx.fillStyle = '#291d17';
+                ctx.fillRect(isl.x, isl.y, isl.width, isl.height);
+                ctx.fillStyle = '#4ade80';
+                ctx.fillRect(isl.x, isl.y, isl.width, 6);
             });
 
-            // Draw Rising Lava Sea
+            // Rising Lava Sea
             ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
             ctx.fillRect(0, currentSeaLevel, canvas.width, canvas.height - currentSeaLevel);
             ctx.fillStyle = '#f97316';
-            ctx.fillRect(0, currentSeaLevel, canvas.width, 8);
+            ctx.fillRect(0, currentSeaLevel, canvas.width, 6);
 
-            // Draw Tanks
+            // Tanks & Projectiles
             drawTank(player);
             bots.forEach(b => drawTank(b));
 
-            // Draw Projectiles
             projectiles.forEach(p => {
-                ctx.fillStyle = p.type === 'nuke' ? '#ef4444' : (p.type === 'blackhole' ? '#c084fc' : '#fbbf24');
+                ctx.fillStyle = '#fbbf24';
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
             });
 
-            // Draw Particles
             particles.forEach(pt => {
                 ctx.fillStyle = pt.color;
                 ctx.fillRect(pt.x, pt.y, pt.size, pt.size);
             });
 
-            // Draw Floating Text
-            ctx.font = 'bold 13px Segoe UI';
+            ctx.font = 'bold 12px Segoe UI';
             floatingTexts.forEach(ft => {
                 ctx.fillStyle = ft.color;
-                ctx.fillText(ft.text, ft.x - 35, ft.y);
+                ctx.fillText(ft.text, ft.x - 20, ft.y);
             });
 
             ctx.restore();
@@ -672,84 +447,16 @@
         }
         requestAnimationFrame(loop);
 
-        // Owner Modal Logic
-        const ownerModal = document.getElementById('ownerModal');
-        function toggleOwnerModal() { ownerModal.classList.toggle('open'); }
-        document.getElementById('openOwnerModal').addEventListener('click', toggleOwnerModal);
-        document.getElementById('closeOwnerModal').addEventListener('click', toggleOwnerModal);
-
-        document.getElementById('toggleGodMode').addEventListener('change', (e) => { ownerState.godMode = e.target.checked; });
-        document.getElementById('toggleInfiniteAmmo').addEventListener('change', (e) => { ownerState.infiniteAmmo = e.target.checked; });
-        document.getElementById('toggleMoonGravity').addEventListener('change', (e) => { ownerState.moonGravity = e.target.checked; });
-        document.getElementById('toggleTeleport').addEventListener('change', (e) => { ownerState.teleport = e.target.checked; });
-
-        document.querySelectorAll('.recoil-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.recoil-btn').forEach(b => b.style.borderColor = 'rgba(255,255,255,0.1)');
-                btn.style.borderColor = '#f59e0b';
-                ownerState.recoilMultiplier = parseFloat(btn.dataset.recoil);
-            });
-        });
-
-        document.querySelectorAll('.weapon-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.weapon-btn').forEach(b => b.style.borderColor = 'rgba(255,255,255,0.1)');
-                btn.style.borderColor = '#38bdf8';
-                ownerState.weapon = btn.dataset.weapon;
-                document.getElementById('activeWeapon').innerText = btn.innerText;
-            });
-        });
-
-        document.getElementById('btnSpawnBot').addEventListener('click', () => {
-            spawnBots(1);
-            addFloatingText(player.x, player.y - 40, "🤖 BOT SPAWNED", "#ef4444");
-        });
-
-        document.getElementById('btnSpawnCrate').addEventListener('click', () => {
-            player.coins += 1000;
-            addFloatingText(player.x, player.y - 40, "📦 SUPPLY CRATE (+1K COINS)", "#fbbf24");
-        });
-
-        document.getElementById('btnMeteor').addEventListener('click', () => {
-            for(let i=0; i<6; i++) {
-                setTimeout(() => {
-                    let mx = Math.random() * canvas.width;
-                    createExplosion(mx, canvas.height * 0.3, 90, 120, true);
-                }, i * 180);
-            }
-            addFloatingText(player.x, player.y - 40, "☄️ METEOR SHOWER CALLED", "#fbbf24");
-        });
-
-        document.getElementById('btnRestoreTerrain').addEventListener('click', () => {
-            initIslands();
-            addFloatingText(player.x, player.y - 40, "🌍 ISLANDS RESTORED", "#22c55e");
-        });
-
-        document.getElementById('btnLowerLava').addEventListener('click', () => {
-            currentSeaLevel += 180;
-            addFloatingText(player.x, player.y - 40, "🌊 LAVA LOWERED", "#38bdf8");
-        });
-
-        document.getElementById('btnAddCoins').addEventListener('click', () => {
-            player.coins += 10000;
-            addFloatingText(player.x, player.y - 40, "+10,000 COINS ADDED", "#fbbf24");
-        });
-
-        document.getElementById('btnSmiteBots').addEventListener('click', () => {
-            bots.forEach(b => {
-                b.hp = 0;
-                b.alive = false;
-                createExplosion(b.x, b.y, 70, 999, true);
-            });
-            addFloatingText(player.x, player.y - 40, "⚡ ALL BOTS SMITED", "#ef4444");
-        });
-
-        document.getElementById('btnRespawnOwner').addEventListener('click', () => {
+        document.getElementById('restartBtn').addEventListener('click', () => {
             player.hp = player.maxHp;
             player.alive = true;
             player.x = canvas.width * 0.5;
-            player.y = canvas.height * 0.15;
+            player.y = canvas.height * 0.12;
             player.vx = 0; player.vy = 0;
+            currentSeaLevel = canvas.height - 60;
+            initIslands();
+            bots = [];
+            spawnBots(24);
             document.getElementById('gameOverScreen').classList.remove('active');
         });
     </script>
